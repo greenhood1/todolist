@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Tasks – To-Do List</title>
+<style>
+:root{--indigo:#4f46e5;--pink:#ec4899;--teal:#14b8a6;--red:#ef4444;--amber:#f59e0b;--bg:#f4f3ff;--card:#fff;--ink:#1c1b3a;--muted:#7a7a9e;--line:#ebeaf8;--shadow:0 10px 30px rgba(79,70,229,.12)}
+@media(prefers-color-scheme:dark){:root{--bg:#13122b;--card:#1d1c42;--ink:#f2f1ff;--muted:#a6a5cf;--line:#2d2c5a}}
+*{box-sizing:border-box;margin:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+.top{background:linear-gradient(120deg,var(--indigo),var(--pink));color:#fff;padding:20px 22px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow)}
+.top h1{font-size:1.5rem}.top small{opacity:.9}.top b{font-size:2rem}
+main{max-width:720px;margin:20px auto;padding:0 14px;display:grid;gap:16px}
+.card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--shadow)}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}.row>*{flex:1;min-width:120px}
+input,select{padding:12px 14px;border:2px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);font-size:1rem;outline:none;width:100%}
+input:focus,select:focus{border-color:var(--indigo)}
+.btn{border:0;border-radius:12px;padding:12px 18px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(120deg,var(--indigo),var(--pink));transition:.2s;font-size:1rem}
+.btn:hover{transform:translateY(-2px)}.ghost{background:transparent;border:2px solid var(--red);color:var(--red)}
+.full{width:100%}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stat span{color:var(--muted);font-size:.85rem}.stat b{display:block;font-size:1.7rem;margin-top:2px}
+.bar{height:10px;background:var(--line);border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--indigo),var(--pink));transition:.5s}
+.bar{margin-top:12px}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.chip{border:2px solid var(--line);background:transparent;color:var(--ink);padding:6px 16px;border-radius:99px;cursor:pointer;font-weight:600}
+.chip.active{background:var(--indigo);border-color:var(--indigo);color:#fff}
+.tools input{flex:1;min-width:120px;padding:8px 12px}
+ul{list-style:none;padding:0}
+.task{display:flex;align-items:center;gap:12px;padding:12px 8px;border-bottom:1px solid var(--line)}
+.task input{width:24px;height:24px;accent-color:var(--teal);flex:none;padding:0}
+.task span{flex:1;word-break:break-word}.task.done span{text-decoration:line-through;color:var(--muted)}
+.meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.tag{font-size:.72rem;font-weight:700;padding:2px 9px;border-radius:99px;background:var(--line);color:var(--muted);font-style:normal}
+.tag.High{background:#ef444422;color:var(--red)}.tag.Medium{background:#f59e0b22;color:#b87400}.tag.Low{background:#14b8a622;color:#0f8f82}.tag.late{background:var(--red);color:#fff}
+.x{background:none;border:0;color:var(--red);cursor:pointer;font-size:1.1rem}
+.empty{text-align:center;color:var(--muted);padding:26px}
+#toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,80px);background:var(--ink);color:var(--bg);padding:12px 22px;border-radius:99px;transition:.3s;opacity:0}#toast.show{transform:translate(-50%,0);opacity:1}
+@media(max-width:480px){.top h1{font-size:1.25rem}main{padding:0 10px;margin:12px auto}.card{padding:14px}.stat b{font-size:1.4rem}.row>*{min-width:100%}}
+.sub{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:.92rem}.task .sub input{width:18px;height:18px}.task .sub span{flex:1}.sub .sd{text-decoration:line-through;color:var(--muted)}
+.link{background:none;border:0;color:var(--indigo);font-weight:700;cursor:pointer;margin-top:6px;padding:0;font-size:.85rem}
+.alert{background:#fff3cd;color:#664d03;border-radius:14px;padding:12px 16px;display:flex;justify-content:space-between;gap:10px;font-weight:700;align-items:center}.alert button{border:0;background:#664d03;color:#fff;border-radius:8px;padding:4px 10px;cursor:pointer}
+</style>
+</head>
+<body>
+<header class="top"><div><h1>✔ My Tasks</h1><small id="today"></small></div><b id="pct">0%</b></header>
+<main>
+<div class="alert" id="alert" hidden></div>
+<section class="card">
+  <div class="row"><input id="title" placeholder="Add a new task…" maxlength="120"></div>
+  <div class="row">
+    <select id="prio"><option>High</option><option selected>Medium</option><option>Low</option></select>
+    <select id="cat"><option>Work</option><option>Home</option><option>Health</option><option>Church</option><option>Personal</option></select>
+    <input type="date" id="due" title="Due date"><input type="time" id="rt" title="Remind me at">
+  </div>
+  <button class="btn full" id="add">+ Add task</button>
+</section>
+<section class="stats">
+  <div class="card stat"><span>Total</span><b id="sT">0</b></div>
+  <div class="card stat"><span>Done</span><b id="sD" style="color:var(--teal)">0</b></div>
+  <div class="card stat"><span>Overdue</span><b id="sO" style="color:var(--red)">0</b></div>
+</section>
+<section class="card">
+  <div class="bar"><i id="bar"></i></div><br>
+  <div class="tools" id="chips"></div>
+  <div class="tools"><input id="q" placeholder="Search tasks…"><select id="sort" style="width:auto"><option value="d">Sort: Due date</option><option value="p">Sort: Priority</option><option value="n">Sort: Newest</option></select></div>
+  <ul id="list"></ul>
+  <button class="btn ghost full" id="clear" style="margin-top:14px">Clear completed</button>
+</section>
+</main>
+<div id="toast"></div>
+<script>
+const $=id=>document.getElementById(id);
+let T=JSON.parse(localStorage.getItem('td_t')||'null')||[
+{id:1,t:'Finish monthly report',p:'High',c:'Work',d:'',done:false,s:[{t:'Collect figures',done:true},{t:'Write summary',done:false}]},
+{id:2,t:'Buy groceries',p:'Medium',c:'Home',d:'',done:true},
+{id:3,t:'Call the dentist',p:'Low',c:'Health',d:'',done:false}];
+T.forEach(t=>{t.s=t.s||[]});
+let F='All';const PR={High:0,Medium:1,Low:2};
+const iso=d=>d.toISOString().slice(0,10),today=iso(new Date());
+$('today').textContent=new Date().toDateString();
+const save=()=>localStorage.setItem('td_t',JSON.stringify(T));
+function toast(m){const t=$('toast');t.textContent=m;t.className='show';setTimeout(()=>t.className='',1600)}
+function fd(d){if(!d)return'';if(d==today)return'Today';const n=new Date(d+'T00:00');return n.toLocaleDateString([],{month:'short',day:'numeric'})}
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function R(){
+  $('chips').innerHTML=['All','Active','Done'].map(f=>`<button class="chip ${f==F?'active':''}" onclick="F='${f}';R()">${f}</button>`).join('');
+  const q=$('q').value.toLowerCase(),s=$('sort').value;
+  let L=T.filter(t=>(F=='All'||(F=='Done')==t.done)&&t.t.toLowerCase().includes(q));
+  L.sort((a,b)=>s=='p'?PR[a.p]-PR[b.p]:s=='n'?b.id-a.id:(a.d||'9')>(b.d||'9')?1:-1);
+  $('list').innerHTML=L.map(t=>{const late=!t.done&&t.d&&t.d<today;return`<li class="task ${t.done?'done':''}"><input type="checkbox" ${t.done?'checked':''} onchange="tg(${t.id})"><div style="flex:1"><span>${esc(t.t)}</span><div class="meta"><em class="tag ${t.p}">${t.p}</em><em class="tag">${t.c}</em>${t.r?`<em class="tag">⏰ ${t.r}</em>`:''}${t.s.length?`<em class="tag">${t.s.filter(x=>x.done).length}/${t.s.length} steps</em>`:''}${t.d?`<em class="tag ${late?'late':''}">${late?'Overdue · ':''}${fd(t.d)}</em>`:''}</div>${t.s.map((x,j)=>`<label class="sub"><input type="checkbox" ${x.done?'checked':''} onchange="ts(${t.id},${j})"><span class="${x.done?'sd':''}">${esc(x.t)}</span><button class="x" onclick="rs(${t.id},${j})">✕</button></label>`).join('')}<button class="link" onclick="as(${t.id})">+ Subtask</button></div><button class="x" onclick="rm(${t.id})">✕</button></li>`}).join('')||'<div class="empty">🎉 Nothing here. Add a task above.</div>';
+  const d=T.filter(t=>t.done).length,r=T.length?Math.round(d/T.length*100):0;
+  $('sT').textContent=T.length;$('sD').textContent=d;$('sO').textContent=T.filter(t=>!t.done&&t.d&&t.d<today).length;
+  $('bar').style.width=r+'%';$('pct').textContent=r+'%';save()}
+window.tg=id=>{const t=T.find(x=>x.id==id);t.done=!t.done;R()};
+window.rm=id=>{T=T.filter(x=>x.id!=id);R();toast('Task deleted')};
+function add(){const t=$('title').value.trim();if(!t){toast('Type a task first ✍️');$('title').focus();return}
+  const r=$('rt').value;let d=$('due').value;if(r&&!d)d=today;
+  if(r&&'Notification'in window&&Notification.permission=='default')Notification.requestPermission();
+  T.unshift({id:Date.now(),t,p:$('prio').value,c:$('cat').value,d,r,n:false,s:[],done:false});$('title').value='';$('due').value='';$('rt').value='';R();toast('Task added ✅')}
+$('add').onclick=add;$('title').onkeydown=e=>{if(e.key=='Enter')add()};
+$('q').oninput=R;$('sort').onchange=R;
+$('clear').onclick=()=>{const n=T.filter(t=>t.done).length;T=T.filter(t=>!t.done);R();toast(n+' cleared')};
+const find=id=>T.find(x=>x.id==id);
+window.as=id=>{const v=(prompt('New subtask')||'').trim();if(v){find(id).s.push({t:v,done:false});R()}};
+window.ts=(id,j)=>{const x=find(id).s[j];x.done=!x.done;R()};
+window.rs=(id,j)=>{find(id).s.splice(j,1);R()};
+function ring(t){$('alert').hidden=false;$('alert').innerHTML='<span>⏰ Reminder: '+esc(t.t)+'</span><button onclick="this.parentNode.hidden=true">OK</button>';
+  try{if('Notification'in window&&Notification.permission=='granted')new Notification('Task reminder',{body:t.t})}catch(e){}}
+function chk(){const now=new Date();T.forEach(t=>{if(t.r&&t.d&&!t.done&&!t.n&&new Date(t.d+'T'+t.r)<=now){t.n=true;ring(t)}})}
+setInterval(()=>{chk();R()},15000);chk();
+R();
+</script>
+</body>
+</html>
